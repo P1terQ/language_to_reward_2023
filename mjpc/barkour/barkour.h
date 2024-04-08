@@ -23,41 +23,41 @@
 #include <mjpc/task.h>
 
 
-namespace mjpc::language2reward {
+namespace mjpc::language2reward   // 嵌套命名空间
+{
 
-class Barkour : public mjpc::Task {
+class Barkour : public mjpc::Task   // Barkour继承自mjpc::Task类
+{
  public:
   std::string Name() const override;
   std::string XmlPath() const override;
-  class ResidualFn : public mjpc::BaseResidualFn {
-   public:
-    explicit ResidualFn(const Barkour* task) :
-        mjpc::BaseResidualFn(task) {}
 
-    void Residual(const mjModel* model, const mjData* data,
-                  double* residual) const override;
+  class ResidualFn : public mjpc::BaseResidualFn  // ResidualFn implementations
+  {
+   public:
+    explicit ResidualFn(const Barkour* task) : mjpc::BaseResidualFn(task) {}
+
+    void Residual(const mjModel* model, const mjData* data, double* residual) const override;
 
    private:
-    friend class Barkour;
-    //  ============  enums  ============
+    friend class Barkour;   // Barkour类是ResidualFn的友元类
+    //!  ============  enums  ============
 
     // feet
     enum BkFoot { kFootFL = 0, kFootHL, kFootFR, kFootHR, kNumFoot };
 
-    //  ============  constants  ============
-    constexpr static BkFoot kFootAll[kNumFoot] = {kFootFL, kFootHL, kFootFR,
-                                                  kFootHR};
+    //!  ============  constants  ============
+    constexpr static BkFoot kFootAll[kNumFoot] = {kFootFL, kFootHL, kFootFR, kFootHR};
 
     // posture gain factors for abduction, hip, knee
     constexpr static double kJointPostureGain[3] = {2, 1, 1};  // unitless
 
     constexpr static char kRootJointName[] = "torso";
 
-    //  ============  methods  ============
+    //!  ============  methods  ============
 
     // compute average foot position, depending on mode
-    void AverageFootPos(double avg_foot_pos[3],
-                        double* foot_pos[kNumFoot]) const;
+    void AverageFootPos(double avg_foot_pos[3], double* foot_pos[kNumFoot]) const;
 
     void GetNormalizedFootTrajectory(
         double duty_ratio, double gait_frequency,
@@ -67,10 +67,10 @@ class Barkour : public mjpc::Task {
 
     void ResetLocked(const mjModel* model);
 
-    //  ============  constants, computed in Reset()  ============
+    //!  ============  constants, computed in Reset()  ============
     int torso_body_id_ = -1;
 
-    // ===== task parameters id ======
+    //! ===== task parameters id ======
     int target_body_height_id_ = -1;
     int goal_position_x_id_ = -1;
     int goal_position_y_id_ = -1;
@@ -84,7 +84,7 @@ class Barkour : public mjpc::Task {
     int target_roll_velocity_id_ = -1;
     int balance_ids_[4] = {-1};
 
-    // ==== gait-relevant parameters id ====
+    //! ==== gait-relevant parameters id ====
     int dist_from_nominal_ids_[4][3];
     int stepping_frequency_ids_[4];
     int ground_to_air_ratio_ids_[4];
@@ -92,10 +92,10 @@ class Barkour : public mjpc::Task {
     int amplitudes_vertical_ids_[4];
     int amplitudes_forward_ids_[4];
 
-    // ==== joint angle parameters id ====
+    //! ==== joint angle parameters id ====
     int target_joint_angle_ids_[12];
 
-    // ==== object root joint ids ====
+    //! ==== object root joint ids ====
     int walker_root_joint_id_ = -1;
 
     double current_base_roll_ = 0;
@@ -111,7 +111,8 @@ class Barkour : public mjpc::Task {
   void ResetLocked(const mjModel* model) override;
 
  protected:
-  std::unique_ptr<mjpc::ResidualFn> ResidualLocked() const override {
+  std::unique_ptr<mjpc::ResidualFn> ResidualLocked() const override 
+  {
     return std::make_unique<ResidualFn>(residual_);
   }
   ResidualFn* InternalResidual() override { return &residual_; }

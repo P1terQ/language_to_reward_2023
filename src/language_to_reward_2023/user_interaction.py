@@ -28,59 +28,56 @@ from language_to_reward_2023 import conversation
 from language_to_reward_2023 import task_configs
 
 
-_API_KEY_FLAG = flags.DEFINE_string("api_key", "", "OpenAI API Key")
-_TASK_FLAG = flags.DEFINE_enum(
-    "task", "barkour", list(task_configs.ALL_TASKS), "task to be used"
-)
-_PROMPT_FLAG = flags.DEFINE_string(
-    "prompt", "thinker_coder", "prompt to be used"
-)
+_API_KEY_FLAG = flags.DEFINE_string("api_key", "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", "OpenAI API Key")
+_TASK_FLAG = flags.DEFINE_enum("task", "barkour", list(task_configs.ALL_TASKS), "task to be used")
+_PROMPT_FLAG = flags.DEFINE_string("prompt", "thinker_coder", "prompt to be used")
 MODEL = "gpt-4"
 
-colorama.init()
+colorama.init() # 终端彩色文本
 
 
 def main(argv: List[str]) -> None:
   if len(argv) > 1:
-    raise app.UsageError("Too many command-line arguments.")
+    raise app.UsageError("Too many command-line arguments.")  # 只有一个api key
 
   safe_executor = confirmation_safe_executor.ConfirmationSafeExecutor()
 
   assert _TASK_FLAG.value in task_configs.ALL_TASKS
 
   openai.api_key = _API_KEY_FLAG.value
-  task_config = task_configs.ALL_TASKS[_TASK_FLAG.value]
+  task_config = task_configs.ALL_TASKS[_TASK_FLAG.value]  # task configuration
   if _PROMPT_FLAG.value not in task_config.prompts:
     raise ValueError(
         "Invalid value for --prompt. Valid values:"
         f" {', '.join(task_config.prompts)}"
     )
   prompt = task_config.prompts[_PROMPT_FLAG.value]
-  print(
-      "Starting MJPC UI"
-  )
-  client_class: Any = task_config.client
+  
+  print("Starting MJPC UI")
+  
+  client_class: Any = task_config.client  #! task
   client = client_class(ui=True)
 
   try:
     # send the grpc channel to the prompt model to create stub
-    prompt_model = prompt(
-        client, executor=safe_executor
-    )
+    prompt_model = prompt(client, executor=safe_executor)
     conv = conversation.Conversation(prompt_model, MODEL)
     client.reset()
 
     while True:
       user_command = input(termcolor.colored("User: ", "red", attrs=["bold"]))
       try:
-        response = conv.send_command(user_command)
+        response = conv.send_command(user_command)  # 处理user_command，输入user_command给llm，返回response
       except Exception as e:  # pylint: disable=broad-exception-caught
         print("Planning failed, try something else... " + str(e) + "\n")
         continue
 
       # Final response should be code
       try:
-        prompt_model.code_executor(response)
+        prompt_model.code_executor(response)  #! PromptThinkerCoder
+        
+        #! 执行代码报错 [Errno 2] No such file or directory: '/tmp/__pycache__/tmps8tampjk.pyc
+        
       except Exception as e:  # pylint: disable=broad-exception-caught
         print("Execution failed, try something else... " + str(e) + "\n")
   finally:

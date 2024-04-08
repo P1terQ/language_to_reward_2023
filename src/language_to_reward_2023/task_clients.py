@@ -122,7 +122,8 @@ class AgentApiTaskClient(TaskClient):
     """Releases any resources associated with the task."""
     self._agent.close()
 
-  def start_recording(self):
+  #! important
+  def start_recording(self):  
     """Start recording simulation states, for later rendering."""
     self._recorded = []
 
@@ -139,32 +140,30 @@ class AgentApiTaskClient(TaskClient):
     self._data.qpos = state.qpos
     self._data.qvel = state.qvel
     self._data.act = state.act
-    self._data.mocap_pos = np.array(state.mocap_pos).reshape(
-        self._data.mocap_pos.shape
-    )
-    self._data.mocap_quat = np.array(state.mocap_quat).reshape(
-        self._data.mocap_quat.shape
-    )
-    self._data.userdata = np.array(state.userdata).reshape(
-        self._data.userdata.shape
-    )
+    self._data.mocap_pos = np.array(state.mocap_pos).reshape(self._data.mocap_pos.shape)
+    self._data.mocap_quat = np.array(state.mocap_quat).reshape(self._data.mocap_quat.shape)
+    self._data.userdata = np.array(state.userdata).reshape(self._data.userdata.shape)
+    
     mujoco.mj_forward(self._model, self._data)
+    
     if self._recorded is not None:
       self._recorded.append(state)
 
   def execute_plan(self, duration=10):
     """Runs MJPC for `duration` seconds while executing planner actions."""
     state = self._agent.get_state()
-    start = state.time
-    while state.time - start < duration:
-      if self._last_planning_time is None or (
-          state.time - self._last_planning_time
-          >= self._planning_duration * self._real_time_speed
-      ):
+    # start time
+    start = state.time  
+    
+    # execute for `duration` seconds
+    while state.time - start < duration:  
+      # one planning duration
+      if self._last_planning_time is None or (state.time - self._last_planning_time >= self._planning_duration * self._real_time_speed):
         self._last_planning_time = state.time
         # repeat planning for 5 times
         for _ in range(5):
           self._agent.planner_step()
+          
       self.update_state()
       self._agent.set_state()  # needed to call transition()
       self._agent.step()

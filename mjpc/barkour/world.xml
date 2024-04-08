@@ -33,4 +33,5 @@
       <geom size="0.01" contype="0" conaffinity="0" rgba="0 1 0 .5" group="2"/>
     </body>
   </worldbody>
+
 </mujoco>
