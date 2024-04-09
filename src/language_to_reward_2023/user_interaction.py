@@ -40,27 +40,33 @@ def main(argv: List[str]) -> None:
   if len(argv) > 1:
     raise app.UsageError("Too many command-line arguments.")  # 只有一个api key
 
-  safe_executor = confirmation_safe_executor.ConfirmationSafeExecutor()
+  safe_executor = confirmation_safe_executor.ConfirmationSafeExecutor() # ConfirmationSafeExecutor
 
-  assert _TASK_FLAG.value in task_configs.ALL_TASKS
+  assert _TASK_FLAG.value in task_configs.ALL_TASKS # task: barkour
 
   openai.api_key = _API_KEY_FLAG.value
-  task_config = task_configs.ALL_TASKS[_TASK_FLAG.value]  # task configuration
+  
+  task_config = task_configs.ALL_TASKS[_TASK_FLAG.value]  # task configuration: barkour config
   if _PROMPT_FLAG.value not in task_config.prompts:
     raise ValueError(
         "Invalid value for --prompt. Valid values:"
         f" {', '.join(task_config.prompts)}"
     )
-  prompt = task_config.prompts[_PROMPT_FLAG.value]
-  
+    
+  prompt = task_config.prompts[_PROMPT_FLAG.value]  #! prompt: PromptThinkerCoder
+  # prompts={
+  #     'thinker_coder': bk_prompt_thinker_coder.PromptThinkerCoder,
+  #     'coder_only': bk_prompt_coder_only.PromptCoder,
+  #     'low_level': bk_prompt_low_level.PromptLowLevel,
+  # },
   print("Starting MJPC UI")
   
-  client_class: Any = task_config.client  #! task
+  client_class: Any = task_config.client  #! task: BarkourClient
   client = client_class(ui=True)
 
   try:
     # send the grpc channel to the prompt model to create stub
-    prompt_model = prompt(client, executor=safe_executor)
+    prompt_model = prompt(client, executor=safe_executor) #! create prompt
     conv = conversation.Conversation(prompt_model, MODEL)
     client.reset()
 
@@ -75,9 +81,7 @@ def main(argv: List[str]) -> None:
       # Final response should be code
       try:
         prompt_model.code_executor(response)  #! PromptThinkerCoder
-        
-        #! 执行代码报错 [Errno 2] No such file or directory: '/tmp/__pycache__/tmps8tampjk.pyc
-        
+                
       except Exception as e:  # pylint: disable=broad-exception-caught
         print("Execution failed, try something else... " + str(e) + "\n")
   finally:

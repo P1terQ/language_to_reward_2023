@@ -21,14 +21,16 @@ from typing import Optional, Sequence
 import mujoco
 from mujoco_mpc import agent as agent_lib
 import numpy as np
+
 from language_to_reward_2023 import task_clients
 from language_to_reward_2023.platforms.barkour import barkour_l2r_tasks
 
 
-_MODEL_PATH = str(
-    pathlib.Path(__file__).parent.parent.parent
-        / "mjpc" / "barkour" / "world.xml"
-)
+# _MODEL_PATH = str(
+#     pathlib.Path(__file__).parent.parent.parent
+#         / "mjpc" / "barkour" / "world.xml"
+# )
+_MODEL_PATH = "/home/ustc/robot/projects/legged_imitation/language2reward/language_to_reward_2023/build/mjpc/barkour/world.xml" # path必须要是build下的路径
 
 
 @dataclasses.dataclass
@@ -60,14 +62,17 @@ class BarkourClient(task_clients.AgentApiTaskClient):
       agent: Optional[agent_lib.Agent] = None,
       test_params: Sequence[str] = (),  # Do not use, test only.
   ):
-    agent = agent or task_clients.create_agent(
+    agent = agent or task_clients.create_agent( # create agent
         task_id='Barkour',
         ui=ui,
         real_time_speed=0.4,
     )
+    print("Create BarkourClient agent: ", agent)
+    
     model = agent.model or mujoco.MjModel.from_xml_path(_MODEL_PATH)
+    print("Create BarkourClient model: ", model)
 
-    super().__init__(
+    super().__init__( # AgentApiTaskClient.__init__
         agent=agent,
         model=model,
         # normally, we run at 25% real time, and planning time is 50 to 80ms,
@@ -77,6 +82,7 @@ class BarkourClient(task_clients.AgentApiTaskClient):
         # TODO(nimrod): change this to 13ms.
         planning_duration=0.005,
     )
+    print("Create BarkourClient Done ")
 
   def reset(self):
     super().reset()

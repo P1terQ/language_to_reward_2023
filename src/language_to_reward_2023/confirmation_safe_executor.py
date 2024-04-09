@@ -49,46 +49,45 @@ class ConfirmationSafeExecutor(safe_executor.SafeExecutor):
   def __init__(self, interpreter_path=None, skip_confirmation=False):
     super().__init__()
     self._confirmed_once = False
-    self._interpreter_path = interpreter_path or default_interpreter()
+    self._interpreter_path = interpreter_path or default_interpreter()  # python interpreter
     self._skip_confirmation = skip_confirmation
 
   def safe_execute(self, code: str) -> str:
-    if not self._confirmed_once:
-      while not self._skip_confirmation:
-        confirm = input(
-            termcolor.colored(_SERIOUS_WARNING, "red", attrs=["bold"])
-        )
+    if not self._confirmed_once:  # 第一次执行的seriours warning
+      while not self._skip_confirmation:  # True
+        # print seriours warning
+        confirm = input( termcolor.colored(_SERIOUS_WARNING, "red", attrs=["bold"]) ) 
         if confirm.lower() == "yes":
           break
       self._confirmed_once = True
-    else:
-      while not self._skip_confirmation:
-        confirm = input(
-            termcolor.colored(_REPEATED_WARNING, "red", attrs=["bold"])
-        )
+    else: # 之后每次执行都有的confirm
+      while not self._skip_confirmation:  # True
+        confirm = input( termcolor.colored(_REPEATED_WARNING, "red", attrs=["bold"]) )
         if confirm.lower() in ("y", "yes"):
           break
+    
+    #! execute code
     return self._execute(code)
 
   def _execute(self, code: str) -> str:
+
+    # 创建临时文件
     f = tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False)
 
+    # 写入代码并关闭文件
     f.write(code)
     f.close()
     filepath = f.name
 
-    # Start by compiling the code to pyc (to get compilation errors)
+    # Start by compiling the code to pyc (to get compilation errors) 编译零食python文件
     try:
-      subprocess.run(
-          [self._interpreter_path, "-m", "py_compile", filepath],
-          check=True,
-      )
+      subprocess.run([self._interpreter_path, "-m", "py_compile", filepath], check=True,)
     except subprocess.CalledProcessError as e:
       raise ValueError("Failed to compile code.") from e
     finally:
       os.unlink(filepath)
 
-    # py_compile should output a pyc file in the pycache directory
+    # py_compile should output a pyc file in the pycache directory 获取编译后的pyc文件
     filename = os.path.basename(filepath)
     directory = os.path.dirname(filepath)
     pycache_dir = os.path.join(directory, "__pycache__")
@@ -100,7 +99,7 @@ class ConfirmationSafeExecutor(safe_executor.SafeExecutor):
       )
       pyc_filepath = os.path.join(pycache_dir, filename)
       
-    # Now execute the pyc file
+    # Now execute the pyc file 执行pyc文件
     try:
       completed_process = subprocess.run(
           [self._interpreter_path, pyc_filepath],

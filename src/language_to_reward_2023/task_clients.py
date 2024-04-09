@@ -25,16 +25,13 @@ import numpy as np
 
 from mujoco_mpc.proto import agent_pb2
 
-
-DEFAULT_UI_SERVER_PATH = str(
-    pathlib.Path(__file__).parent / "mjpc" / "l2r_ui_server"
-)
-DEFAULT_HEADLESS_SERVER_PATH = str(
-    pathlib.Path(__file__).parent / "mjpc" / "l2r_headless_server"
-)
+# DEFAULT_UI_SERVER_PATH = str(pathlib.Path(__file__).parent / "mjpc" / "l2r_ui_server")
+DEFAULT_UI_SERVER_PATH = "/home/ustc/robot/projects/legged_imitation/language2reward/language_to_reward_2023/build/mjpc/l2r_ui_server"
+# DEFAULT_HEADLESS_SERVER_PATH = str(pathlib.Path(__file__).parent / "mjpc" / "l2r_headless_server")
+DEFAULT_HEADLESS_SERVER_PATH = "/home/ustc/robot/projects/legged_imitation/language2reward/language_to_reward_2023/build/mjpc/l2r_headless_server"
 
 
-class TaskClient(abc.ABC):
+class TaskClient(abc.ABC):  # abstract base class抽象类
   """Base class for task clients."""
 
   @abc.abstractmethod
@@ -64,7 +61,7 @@ def create_agent(
   """Helper function to create an agent_lib.Agent instance."""
   if server_binary_path is None:
     if ui:
-      server_binary_path = DEFAULT_UI_SERVER_PATH
+      server_binary_path = DEFAULT_UI_SERVER_PATH #? 这个现在为啥找不到了
     else:
       server_binary_path = DEFAULT_HEADLESS_SERVER_PATH
 
@@ -75,7 +72,7 @@ def create_agent(
   else:
     flags = []
 
-  return agent_lib.Agent(
+  return agent_lib.Agent( #! 调用mujoco_mpc/python/mujoco_mpc/agent.py中的Agent类
       task_id,
       server_binary_path=server_binary_path,
       real_time_speed=real_time_speed,
@@ -104,8 +101,8 @@ class AgentApiTaskClient(TaskClient):
     self._data = mujoco.MjData(self._model)
 
     self._last_planning_time = None
-    self._planning_duration = planning_duration
-    self._real_time_speed = real_time_speed
+    self._planning_duration = planning_duration # 0.005
+    self._real_time_speed = real_time_speed # 1.0
     self._recorded = None
 
   def agent(self) -> agent_lib.Agent:

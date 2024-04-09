@@ -24,9 +24,7 @@ import termcolor
 from language_to_reward_2023.platforms import llm_prompt
 
 
-def _open_ai_call_with_retry(
-    model: str, messages: list[Any]
-) -> openai.ChatCompletion:
+def _open_ai_call_with_retry(model: str, messages: list[Any]) -> openai.ChatCompletion:
   """Call OpenAI API with retry."""
   reset_trigger_phrases = ["CHOICE", "NUM"]
   success = False
@@ -53,52 +51,61 @@ class Conversation:
 
   def __init__(
       self,
-      prompt_model: llm_prompt.LLMPrompt,
-      model: str,
+      prompt_model: llm_prompt.LLMPrompt, #! PromptThinkerCoder
+      model: str, #! gpt-4
       print_responses: bool = True,
   ):
     self._prompt_model = prompt_model
-    self._model = model
-    self._print_responses = print_responses
-    number_of_llms = prompt_model.num_llms
+    self._model = model # gpt-4
+    self._print_responses = print_responses # true
+    number_of_llms = prompt_model.num_llms  # 2
+    
     self._message_queues = [[] for _ in range(number_of_llms)]
 
     # Add general prompt to the message queue.
     for llm_id in range(number_of_llms):
-      message = [{"role": "user", "content": prompt_model.prompts[llm_id]}]
-      self._message_queues[llm_id].append(message[0])
+      message = [{"role": "user", "content": prompt_model.prompts[llm_id]}] 
+      self._message_queues[llm_id].append(message[0]) #! 2 prompts: prompt_thinker and prompt_coder
 
+  # user输入的command，传给llm，返回response
   def send_command(self, user_command: str) -> str:
     """Sends a user command to the LLMs, returns final processed response."""
+    # reset conversation history
     if user_command == "reset":
       self.reset()
       print("Resetting the conversation history.")
       return "reset"
+    
+    # 上传的消息
     upstream_message = user_command + " Make sure to ignore irrelevant options."
-    for llm_id in range(self._prompt_model.num_llms):
-      completion = _open_ai_call_with_retry(
+    
+    for llm_id in range(self._prompt_model.num_llms): # 2
+      #! ask gpt-4 for completion
+      completion = _open_ai_call_with_retry(  
           self._model,
           self._message_queues[llm_id]
           + [{"role": "user", "content": upstream_message}],
       )
-      if self._prompt_model.keep_message_history[llm_id]:
-        self._message_queues[llm_id].append(
-            {"role": "user", "content": upstream_message}
-        )
+      
+      # save message history
+      if self._prompt_model.keep_message_history[llm_id]: # [True, False]
+        self._message_queues[llm_id].append({"role": "user", "content": upstream_message})
         self._message_queues[llm_id].append(completion.choices[0].message)
+        
       print(f"LLM{llm_id} queried")
       response = completion.choices[0].message.content
-      if self._print_responses:
+      
+      if self._print_responses: # true
         print(termcolor.colored(response + "\n", "cyan", attrs=["bold"]))
+
       try:
-        upstream_message = self._prompt_model.response_processors[llm_id](
-            response
-        )
+        upstream_message = self._prompt_model.response_processors[llm_id](response) # process response
       except Exception:
         if self._prompt_model.keep_message_history[llm_id]:
           self._message_queues[llm_id].pop(-1)
           self._message_queues[llm_id].pop(-1)
         raise
+      
     return upstream_message
 
   def reset(self) -> None:
